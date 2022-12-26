@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+</head>
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
+     /* The Modal (background) */
+ .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  
+  /* Modal Content/Box */
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+  }
+  
+  /* The Close Button */
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  } 
+
+  table {
+    text-align: center;
+  }
+  thead {
+    background-color: lightgray;
+}
+td, th {
+      border: 1px solid black;
+      padding: 0.2rem;
+  }
+button{
+    height: 3vh;
+    width: 8vh;
+}
+select, option {
+    text-align: center;
+}
+
+
+</style>
+
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Gender</th>
+                <th>Position</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Option</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+
+    <div id="stDetails" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <div class="m-content">
+
+          </div>
+        </div>
+    </div>
+</body>
+<script>
+    let curency = new Intl.NumberFormat('en-US',{
+            style:'currency',
+            currency:'CAD'
+    });
+
+    let employee_info = [];
+    let employeeMap = new Map();
+
+    $("#stDetails").hide();
+
+    const employeeObj = function(id, first_name, last_name, email, phone, gender, position, department, salary){
+        this.id = id;
+        this.first_name = first_name;
+        this.last_name = last_name;
+        this.email = email;
+        this.phone = phone;
+        this.gender = gender;
+        this.position = position;
+        this.department = department;
+        this.salary = curency.format(salary);
+
+        this.displayAll = function(){
+            for(let prop in this){
+                if(typeof this[prop] != "function"){
+                    return this[prop];
+                }
+            }
+        }
+    };
+
+    $.getJSON('./data/employeeData_js1.json', function(data){
+        employee_info = data;
+        popMap();
+        populateTable();
+        createFilters(employee_info);
+        countDepart(employee_info);
+    });
+
+    function popMap(){
+        $.each(employee_info, function(idx, employee){
+            if(employeeMap.has(employee.id, employee) == false){ //only add to map if is not repeated
+                employeeMap.set(employee.id, employee);
+                let newEmployee = new employeeObj(employee.id, employee.first_name, employee.last_name, employee.email, employee.phone, employee.gender, employee.position, employee.department, employee.salary);
+                // newEmployee.displayAll()
+            }
+        });
+    }
+
+    function populateTable(){
+        employeeMap.forEach(function(employee, id){ //loop trough each item of map
+            let tr = $('<tr></tr>');
+            let idTD = $(`<td>${employee.id}</td>`);
+            let fNameTD = $(`<td>${employee.first_name}</td>`);
+            let lNameTD = $(`<td>${employee.last_name}</td>`);
+            let emailTD = $(`<td>${employee.email}</td>`);
+            let phoneTD = $(`<td>${employee.phone}</td>`);
+            let genderTD = $(`<td>${employee.gender}</td>`);
+            let positionTD = $(`<td>${employee.position}</td>`);
+            let departTD = $(`<td>${employee.department}</td>`);
+            let salTD = $(`<td>${curency.format(employee.salary)}</td>`);
+            let editBtn = $(`<button type='button'>Edit</button>`)
+            let editTD = $(`<td></td>`);
+
+            editBtn.click(function(){
+                $("#stDetails").show('slow');
+                let tr = $(this).parent().parent();
+                let idMap = $(tr.children()[0]).text()
+                // console.log(employeeMap.get(id))
+                let employeeInfo = employeeMap.get(id);
+                let idUpdateEmployee = id;
+                $.each(employeeInfo, function(idx, employee){
+                    let modalContent = $('#stDetails .m-content');
+                    modalContent.children().remove();
+                    modalContent.append(`<h3>FirstName: ${employeeInfo.first_name}</h3>`);
+                    modalContent.append(`<h3>LastName: ${employeeInfo.last_name}</h3>`);
+                    modalContent.append(`<h3>Email: ${employeeInfo.email}</h3>`);
+
+                    // modalContent.append(`<h3>Phone: ${employeeInfo.phone}</h3>`);
+                    let h3Phone = $("<h3>Phone:</h3>");
+                    let inputPhone = $(`<input value='${employeeInfo.phone}'/>`);
+                    h3Phone.append(inputPhone);
+                    modalContent.append(h3Phone);
+
+
+                    // modalContent.append(`<h3>Gender: ${employeeInfo.gender}</h3>`);
+                    let h3Gender = $("<h3>Gender:</h3>");
+                    let inputGender = $(`<input value='${employeeInfo.gender}'/>`);
+                    h3Gender.append(inputGender);
+                    modalContent.append(h3Gender);
+
+                    modalContent.append(`<h3>Position: ${employeeInfo.position}</h3>`);
+                    modalContent.append(`<h3>Department: ${employeeInfo.department}</h3>`);
+                    let h3Sal = $("<h3>Salary:</h3>");
+                    let inputSal = $(`<input value='${curency.format(employeeInfo.salary)}'/>`);
+                    h3Sal.append(inputSal);
+                    modalContent.append(h3Sal);
+
+                    // Saving button part
+                    let saveBtn = $("<button type='button'>Save</button>");
+                    saveBtn.click(function(){
+                        
+                        employeeInfo.phone = inputPhone.val();
+                        $(tr.children()[4]).text(inputPhone.val());
+                        
+                        employeeInfo.gender = inputGender.val();
+                        $(tr.children()[5]).text(inputGender.val());
+                        
+                        employeeInfo.salary = parseFloat(inputSal.val());
+                        $(tr.children()[8]).text(curency.format(parseFloat(inputSal.val())));
+                        
+                        employeeMap.set(idUpdateEmployee, employeeInfo);
+                        $("#totalMap").text(curency.format(calcTotalSalMap(employeeMap)));
+                        $('#stDetails').fadeOut('slow');
+                    });
+                    modalContent.append(saveBtn);
+
+                    // Delete button part
+                    let delBtn = $("<button type='button'>Delete</button>");
+                    delBtn.click(function(){
+                        employeeMap.delete(idUpdateEmployee);
+                        //I'm not sure how to update a property of an object inside a map.
+                        modalContent.children().remove();
+                        modalContent.append(`<h2>Are you sure you want to delete the information?</h3>`);
+                        let yesBtn = $("<button type='button'>Yes</button>");
+                        yesBtn.click(function(){
+                            tr.remove() //remove tr from table
+                            employeeMap.delete(idx); //deleting from map
+                            $("#totalMap").text(curency.format(calcTotalSalMap(employeeMap)));
+                            $('#stDetails').fadeOut('slow');
+                        })
+                        let noBtn = $("<button type='button'>No</button>");
+                        noBtn.click(function(){
+                            $('#stDetails').fadeOut('slow');
+                        })
+                        modalContent.append(yesBtn, noBtn);
+                    });
+                    modalContent.append(delBtn);
+                })
+            })
+            editTD.append(editBtn);
+
+            tr.append(idTD, fNameTD, lNameTD, emailTD, phoneTD, genderTD, positionTD, departTD, salTD, editTD);
+            $('tbody').append(tr);
+        })
+        
+        let tr = $('<tr></tr>');
+        let fillTD = $(`<td colspan='7'></td>`);
+        let textTD = $(`<td>Salary Total</td>`);
+        let totalTD = $(`<td id='totalMap' colspan='2'>${curency.format(calcTotalSalMap(employeeMap))}</td>`);
+        tr.append(fillTD, textTD, totalTD);
+        $('tbody').append(tr);
+
+        // let tr2 = $('<tr></tr>');
+        // let fillTD2 = $(`<td colspan='7'></td>`);
+        // let textTD2 = $(`<td>Salary Total</td>`);
+        // let totalTD2 = $(`<td colspan='2'>${curency.format(calcTotalSal(employeeMap))}</td>`);
+        // tr2.append(fillTD2, textTD2, totalTD2);
+        // $('tbody').append(tr2);
+
+    };
+
+    $('#stDetails .close').click(function(event){
+        $('#stDetails').fadeOut('slow');
+    });
+
+    function createFilters(employee_info){
+        // $('<select></select>').remove();
+        let select = $('<select></select>');
+        let departSet = new Set()
+
+        select.append(`<option value='All'>All</option>`);
+        $.each(employee_info, function(idx, val){
+            if(departSet.has(val.department) == false){
+                departSet.add(val.department);
+                select.append(`<option value='${val.department}'>${val.department}</option>`);
+            }
+        })
+        select.change(function(){
+            let selectTxt = select.val();
+            if(selectTxt != "All"){
+                $('tbody tr').filter(function(){
+                    let departTD = $($(this).children()[7]).text();
+                    $(this).toggle(departTD.indexOf(selectTxt) > -1);
+                    })
+            }else{
+                $('tbody tr').show()
+            }
+        })
+        $("body").append(select).before(select)
+    }
+
+    function calcTotalSalMap(map){
+        let totalSalary = 0;
+        map.forEach(function(value, id){
+            totalSalary += value.salary
+        })
+        totalSalary = parseFloat(totalSalary.toFixed(2));
+        return  totalSalary
+    }
+
+    // console.log(employee_info)
+    function countDepart(map){
+        let countObj = new Map();
+        let departSet = new Set();
+        let i = 0;
+        let array1 = [];
+
+        $.each(map, function(idx, val){
+            if(departSet.has(val.department) == false){
+                departSet.add(val.department);
+            }
+        })
+        // console.log(array1);
+    }
+
+    
+</script>
+</html>
